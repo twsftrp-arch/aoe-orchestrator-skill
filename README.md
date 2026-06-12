@@ -1,8 +1,10 @@
 # aoe-orchestrator-skill
 
-멀티 AI 에이전트 "함대"를 한 명이 운영하기 위한 오케스트레이션 스킬 + 감시 인프라.
+멀티 AI 에이전트 "함대"를 한 명이 운영하기 위한 워크플로우 가이드 + 오케스트레이션 스킬 + 감시 인프라.
 
-[agent-of-empires(aoe)](https://github.com/njbrake/agent-of-empires) 위에서 Claude Code / Codex CLI 세션 여러 개를 굴릴 때, **오케스트레이터 세션 1개가 워커 세션들을 감시·중계**하도록 만드는 운용 규칙(SKILL.md)과 스크립트 모음입니다. [steipete의 maintainer-orchestrator](https://github.com/steipete/agent-scripts) 패턴을 개인 멀티-구독 환경에 맞게 이식·진화시킨 것입니다.
+**전체 워크플로우** = aoe + 다중 구독(Claude/Codex/Gemini/Cursor…) + structured view + tailscale 모바일 관제. 왜 이 조합인지는 [docs/WORKFLOW.md](docs/WORKFLOW.md), 0에서 따라 만드는 순서는 [docs/SETUP.md](docs/SETUP.md)를 보세요.
+
+이 레포의 코드 부분은 그중 오케스트레이션 층입니다: [agent-of-empires(aoe)](https://github.com/njbrake/agent-of-empires) 위에서 에이전트 세션 여러 개를 굴릴 때, **오케스트레이터 세션 1개가 워커 세션들을 감시·중계**하도록 만드는 운용 규칙(SKILL.md)과 스크립트 모음. [steipete의 maintainer-orchestrator](https://github.com/steipete/agent-scripts) 패턴을 개인 멀티-구독 환경에 맞게 이식·진화시킨 것입니다.
 
 > One-person fleet orchestration for AI coding agents on top of
 > [agent-of-empires](https://github.com/njbrake/agent-of-empires):
@@ -20,6 +22,9 @@
 ## 구성
 
 ```
+docs/WORKFLOW.md              전체 워크플로우 — 스택 구조, 왜 다중 구독인가,
+                              강점 라우팅, 운영 리듬, 비용 감각
+docs/SETUP.md                 0→1 따라하기 — 단계별 도입 (각 단계가 독립적으로 유용)
 SKILL.md                      오케스트레이터 운용 규칙 (Claude Code 스킬)
 scripts/aoe-watch.py          이벤트 감시기 — aoe의 ACP 이벤트 DB를 폴링해
                               TURN_DONE/STOPPED/ERROR/LONG_RUN을 events.log에 기록
