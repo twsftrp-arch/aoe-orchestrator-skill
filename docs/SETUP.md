@@ -7,8 +7,10 @@
 ## 1단계 — aoe + 세션 2개 (10분)
 
 ```bash
-# aoe 설치 (https://github.com/njbrake/agent-of-empires 참조)
-brew install njbrake/tap/agent-of-empires   # 또는 cargo install agent-of-empires
+# aoe 설치 (공식 문서: https://www.agent-of-empires.com/docs/installation/)
+brew install aoe
+# 또는: curl -fsSL https://raw.githubusercontent.com/agent-of-empires/agent-of-empires/main/scripts/install.sh | bash
+# 전제: tmux 필요
 
 # 프로젝트 두 개를 세션으로
 cd ~/work/project-a && aoe add --title project-a --tool claude --structured-view
