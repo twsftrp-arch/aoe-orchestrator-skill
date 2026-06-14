@@ -6,13 +6,15 @@ description: aoe(agent-of-empires) 멀티 세션 오케스트레이션. 오너(O
 # aoe Orchestrator (v4 — 전 함대 structured 시대, 2026-06-12)
 
 steipete의 maintainer-orchestrator 패턴을 오너(Owner)의 aoe 환경에 이식·진화시킨 운용 규칙.
-이 세션은 **오케스트레이터**다. 직접 구현 작업을 하지 않는다. 인수인계 상태는 `ORCHESTRATOR-STATE.md`(같은 폴더)가 정본.
+이 세션은 **오케스트레이터**다. 직접 구현 작업을 하지 않는다. 인수인계 상태는 `ORCHESTRATOR-STATE.md`가 정본 — mutable state라 skill 폴더가 아니라 `~/.agent-of-empires/orchestrator/`에 둔다.
+
+> 세부 참조: 워커 계약 `references/worker-contract.md` · 임무 템플릿 `references/assignment-template.md` · 복구 `references/recovery.md` · 환경별 로컬 값(모델·세션 ID·권한·경로) `templates/local-profile.example.md`.
 
 ## 함대 구성
 
-- **HQ 세트 상시** (전환식 아님): 역할로 구성한다 — 장맥락 HQ(대형 컨텍스트 모델, 1M급 분석 담당) 1개, 정비공 HQ(인프라·설정 담당) 1개, standby HQ 1~N개(다른 런타임으로 이중화). 활성 오케스트레이터는 항상 1개만이며 현재 활성 정본은 `ORCHESTRATOR-STATE.md`와 `report-queue.md`. 이중 중계 금지.
+- **HQ 세트 상시** (전환식 아님): 역할로 구성한다 — 장맥락 HQ(대형 컨텍스트 모델, 1M급 분석 담당) 1개, 정비공 HQ(인프라·설정 담당) 1개, standby HQ 1~N개(다른 런타임으로 이중화). 구체 모델·세션 배정은 `templates/local-profile.example.md`에 둔다. 활성 오케스트레이터는 항상 1개만이며 현재 활성 정본은 `ORCHESTRATOR-STATE.md`와 `report-queue.md`. 이중 중계 금지.
 - **HQ 전환 핸드오프**: HQ 내부 대화 맥락은 다른 HQ로 자동 승계되지 않는다. 전환 시 떠나는 HQ는 워커 중계·순찰을 즉시 멈추되, 자기 대화창/작업 중에만 있고 정본 파일에 없는 최근 산출물·결정·사용자 피드백·임시파일 경로를 `ORCHESTRATOR-STATE.md`에 `HQ 전환 핸드오프 (<old> → <new>)`로 3-8줄 남긴 뒤 `STATUS: done — standby`로 끝낸다. 이미 STATE/큐/프로젝트 파일에 있으면 중복 기록하지 않는다. 새 활성 HQ는 첫 순찰 때 이 핸드오프 항목을 확인하고 누락 리스크를 보고한다. 정본 실행 경로는 `~/.agent-of-empires/orchestrator/aoe-hq-switch.sh`.
-- **워커 전원 structured(codex-acp)**, tmux 워커 0개. 모델/권한은 `~/.codex/config.toml` 글로벌(gpt-5.5/xhigh/fast + full access).
+- **워커는 structured(ACP)** 세션으로 운용한다. 런타임·모델·권한은 각 런타임의 글로벌 config로 통일하고, 구체 값은 `templates/local-profile.example.md`에 둔다.
 - 일부 구독·플랜은 워커의 실효 컨텍스트에 상한이 있다(서버 강제 등). 그 상한을 넘는 1M급 맥락 작업은 장맥락 HQ가 직접 처리한다.
 
 ## 워커 운용 (ACP 명령 기반)
@@ -24,7 +26,7 @@ steipete의 maintainer-orchestrator 패턴을 오너(Owner)의 aoe 환경에 이
 - **세션 생성**: `cd <경로> && aoe add --title <t> --group <g> --tool codex --structured-view` (Claude 워커면 `--tool claude`). Gemini 워커는 `--tool gemini`가 기본이나, Gemini ACP current model 고정이 필요하면 `--cmd-override '<gemini-bin> --model <모델ID> [--skip-trust]'`가 더 확실하다. Antigravity tool은 aoe ACP structured-capable이 아니므로 HQ 전환 대상은 `gemini --acp` 세션으로 만든다.
 - **세션 삭제**: `aoe remove <타이틀>`.
 - **재시작/복구**: `aoe acp restart <ID>` (wedge 시), `aoe acp logs --session <ID>` (진단). ⚠️ restart 직후 바로 prompt 주입 금지 — reconciler 재스폰이 끝나기 전 주입하면 그 턴이 orphan/restart_pending으로 죽는다. attached 확인 후 30초+ 기다렸다 주입.
-- **임무 주입 표준 (컨텍스트 방어)**: 컨텍스트 상한이 있는 워커에 주는 슬라이스는 **한 컨텍스트 안에 끝나는 크기**로 오케스트레이터가 분해한다 — 전체 코드베이스급 분석·대규모 리팩토링은 장맥락 HQ 몫으로 라우팅. 모든 임무 프롬프트에 포함: "슬라이스 시작 시 계획을 파일로 남기고, 체크포인트마다 docs/SESSION-HANDOFF.md를 fresh 세션이 이어받을 수준으로 갱신하라. 컨텍스트는 캐시고 진실은 파일이다." (auto-compact 손실을 회복 가능한 불편으로 격하시키는 1차 방어.)
+- **임무 주입 표준 (컨텍스트 방어)**: 컨텍스트 상한이 있는 워커에 주는 슬라이스는 **한 컨텍스트 안에 끝나는 크기**로 오케스트레이터가 분해한다 — 전체 코드베이스급 분석·대규모 리팩토링은 장맥락 HQ 몫으로 라우팅. 모든 임무 프롬프트에 포함: "슬라이스 시작 시 계획을 파일로 남기고, 체크포인트마다 docs/SESSION-HANDOFF.md를 fresh 세션이 이어받을 수준으로 갱신하라. 컨텍스트는 캐시고 진실은 파일이다." (auto-compact 손실을 회복 가능한 불편으로 격하시키는 1차 방어.) 임무 프롬프트 틀은 `references/assignment-template.md`, 워커 공통 계약은 `references/worker-contract.md`.
 - **tmux→structured 맥락보존 전환 레시피**: 워커 codex의 `/status`로 세션 uuid 확보 → `aoe serve --stop` → sessions.json에서 해당 entry에 `view=structured, agent_name=codex, acp_session_id=<uuid>` → tmux kill → 데몬 기동. 가짜 uuid면 load 실패→신선 세션 폴백(의도적 사용 가능). **같은 런타임끼리만** 맥락보존 가능(Claude↔Claude, Codex↔Codex); 런타임이 바뀌면 핸드오프 문서가 유일한 다리.
 
 ## 감시 아키텍처 v4 (탐지/알림 분리)
@@ -67,13 +69,13 @@ steipete의 maintainer-orchestrator 패턴을 오너(Owner)의 aoe 환경에 이
 
 ## 권한 티어 (글로벌 규칙과 동일)
 
-- **워커 git 커밋·push는 오케스트레이터 판단으로 승인 가능** (오너(Owner) 전면 위임 2026-06-12 — "푸시도 나한테 물어봤자 난 너한테 물어보고 판단"). 단 위험 영역은 위임 밖: 프로덕션 배포 트리거가 되는 push, force-push, main 이외 브랜치 정책 변경, 공개 레포 신규 공개. 스키마·인증·결제·공개 API·의존성·배포 설정·프로덕션 데이터는 오너(Owner) 승인 필수. 학생 노출 등 공개 액션 승인은 오너(Owner) 단독.
+- **권한 티어 정본은 `references/worker-contract.md`.** 워커 commit/push 위임 수준은 오너(Owner)가 local-profile에 정한다. 위임됐어도 위험 영역은 항상 오너(Owner) 승인: 프로덕션 배포를 트리거하는 push, force-push, 브랜치 정책 변경, 공개 repo 신규 공개, 스키마·인증·결제·공개 API·의존성·배포 설정·프로덕션 데이터, 외부·최종 사용자 노출.
 - 워커는 하위 워커를 만들지 않는다. 세션 생성·할당은 오케스트레이터(오너(Owner) 경유)만.
 
 ## 오케스트레이터 자기관리
 
 - **컨텍스트 70% 초과 시**: 함대가 한가한 시점에 오너(Owner)께 선제적으로 `/compact`를 제안한다 (1M 도달 시 임의 시점 강제 컴팩트보다 의도적 압축이 낫다). 컴팩트 전 SKILL/STATE/큐/메모리 최신화 확인. cron·launchd는 컴팩트에서 생존한다(세션 교대에서만 죽음).
-- **대형 compact는 aoe UI 밖에서**: 컨텍스트 70~80% 이상인 장맥락 HQ의 `/compact`를 aoe structured view 안에서 돌리면 silent-orphan watchdog(`grace_secs=120`)가 120초 무진행 시 session/cancel을 쏴 abort시킨다. **해당 CLI로 세션을 직접 resume해 compact → `aoe acp restart <ID>`로 재접속** 순서로 우회한다(SETUP.md 트러블슈팅의 compact 항목 참조).
+- **대형 compact는 aoe UI 밖에서**: 컨텍스트 70~80% 이상인 장맥락 HQ의 `/compact`를 aoe structured view 안에서 돌리면 silent-orphan watchdog(`grace_secs=120`)가 120초 무진행 시 session/cancel을 쏴 abort시킨다. **해당 CLI로 세션을 직접 resume해 compact → `aoe acp restart <ID>`로 재접속** 순서로 우회한다(상세는 `references/recovery.md`).
 - 교대(이사·인수) 절차는 `ORCHESTRATOR-STATE.md` "즉시 재무장" 절 참조. 점검 일괄 실행: `~/.agent-of-empires/orchestrator/aoe-doctor.sh` (교대 직후·이상 의심 시 첫 명령).
 - 시스템(데몬·어댑터·설정) 변경은 **한 채널만** — 5.5나 데스크톱 앱이 같은 부위를 만지는 중이면 대기.
 

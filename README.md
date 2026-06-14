@@ -28,7 +28,8 @@ scripts/aoe-watch.py          Event watcher — polls aoe's ACP event DB and log
 scripts/aoe-doctor.sh         1-minute health check — daemon, watcher, worker count,
                               DB freshness, queue consistency; FAIL lines include the fix
 launchd/com.example.aoe-watch.plist   launchd registration example
-templates/                    Handoff doc + report queue blanks
+references/                   Worker contract, assignment template, recovery (extracted from SKILL.md)
+templates/                    Handoff doc, report queue, local-profile example (fill with your env)
 ```
 
 ## Core operating rules (SKILL.md digest)
@@ -49,15 +50,17 @@ Prereqs: macOS, [aoe](https://github.com/njbrake/agent-of-empires) 1.11+ (struct
 git clone https://github.com/twsftrp-arch/aoe-orchestrator-skill
 cd aoe-orchestrator-skill
 
-# 1. the skill (Claude Code)
+# 1. the skill (Claude Code) — instruction/reference
 mkdir -p ~/.claude/skills/aoe-orchestrator
-cp SKILL.md templates/ORCHESTRATOR-STATE.md ~/.claude/skills/aoe-orchestrator/
+cp SKILL.md ~/.claude/skills/aoe-orchestrator/
+cp -r references ~/.claude/skills/aoe-orchestrator/
 
-# 2. watcher + doctor
+# 2. watcher + doctor + mutable state (orchestrator dir = source of truth for state)
 mkdir -p ~/.agent-of-empires/orchestrator
 cp scripts/aoe-watch.py scripts/aoe-doctor.sh ~/.agent-of-empires/orchestrator/
 chmod +x ~/.agent-of-empires/orchestrator/aoe-doctor.sh
-cp templates/report-queue.md ~/.agent-of-empires/orchestrator/
+cp templates/ORCHESTRATOR-STATE.md templates/report-queue.md ~/.agent-of-empires/orchestrator/
+cp templates/local-profile.example.md ~/.agent-of-empires/orchestrator/local-profile.md
 
 # 3. register the watcher with launchd
 sed "s/YOUR_USERNAME/$(whoami)/g" launchd/com.example.aoe-watch.plist \
