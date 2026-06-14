@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+# operator's filled-in profile — only the .example is tracked
+local-profile.md

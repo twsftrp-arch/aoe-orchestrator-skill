@@ -28,8 +28,10 @@ scripts/aoe-watch.py          이벤트 감시기 — aoe의 ACP 이벤트 DB를
 scripts/aoe-doctor.sh         1분 헬스체크 — 데몬·감시기·워커수·DB신선도·큐 정합을
                               일괄 점검, FAIL 항목엔 복구 명령 동반 (읽기 전용)
 launchd/com.example.aoe-watch.plist   감시기 launchd 등록 예시
+references/                           워커 계약·임무 템플릿·복구 (SKILL에서 추출)
 templates/ORCHESTRATOR-STATE.md       인수인계 문서 빈 틀
 templates/report-queue.md             보고 큐 빈 틀
+templates/local-profile.example.md    환경별 로컬 값 예시 (모델·세션·권한·경로)
 ```
 
 ## 핵심 운용 규칙 (SKILL.md 요약)
@@ -50,16 +52,17 @@ templates/report-queue.md             보고 큐 빈 틀
 git clone https://github.com/twsftrp-arch/aoe-orchestrator-skill
 cd aoe-orchestrator-skill
 
-# 1. 스킬 설치 (Claude Code 기준)
+# 1. 스킬 설치 (Claude Code 기준) — instruction/reference
 mkdir -p ~/.claude/skills/aoe-orchestrator
 cp SKILL.md ~/.claude/skills/aoe-orchestrator/
-cp templates/ORCHESTRATOR-STATE.md ~/.claude/skills/aoe-orchestrator/
+cp -r references ~/.claude/skills/aoe-orchestrator/
 
-# 2. 감시기 + 닥터
+# 2. 감시기 + 닥터 + mutable state (상태 정본은 orchestrator 디렉터리)
 mkdir -p ~/.agent-of-empires/orchestrator
 cp scripts/aoe-watch.py scripts/aoe-doctor.sh ~/.agent-of-empires/orchestrator/
 chmod +x ~/.agent-of-empires/orchestrator/aoe-doctor.sh
-cp templates/report-queue.md ~/.agent-of-empires/orchestrator/
+cp templates/ORCHESTRATOR-STATE.md templates/report-queue.md ~/.agent-of-empires/orchestrator/
+cp templates/local-profile.example.md ~/.agent-of-empires/orchestrator/local-profile.md
 
 # 3. 감시기 launchd 등록 (plist 안의 YOUR_USERNAME을 자기 것으로 바꾼 뒤)
 sed "s/YOUR_USERNAME/$(whoami)/g" launchd/com.example.aoe-watch.plist \

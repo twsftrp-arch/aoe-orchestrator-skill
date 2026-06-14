@@ -30,11 +30,15 @@ git clone https://github.com/twsftrp-arch/aoe-orchestrator-skill
 cd aoe-orchestrator-skill
 
 # 스킬 설치 (Claude Code 기준)
+# instruction/reference → skill 폴더
 mkdir -p ~/.claude/skills/aoe-orchestrator
 cp SKILL.md ~/.claude/skills/aoe-orchestrator/
-cp templates/ORCHESTRATOR-STATE.md ~/.claude/skills/aoe-orchestrator/
+cp -r references ~/.claude/skills/aoe-orchestrator/
+# mutable state → orchestrator 디렉터리 (상태 정본은 여기)
 mkdir -p ~/.agent-of-empires/orchestrator
+cp templates/ORCHESTRATOR-STATE.md ~/.agent-of-empires/orchestrator/
 cp templates/report-queue.md ~/.agent-of-empires/orchestrator/
+cp templates/local-profile.example.md ~/.agent-of-empires/orchestrator/local-profile.md   # 자기 환경 값으로 채우기
 
 # HQ 세션 생성 — 타이틀에 (HQ) 필수 (감시기가 알림에서 제외하는 표식)
 cd ~ && aoe add --title "Claude(HQ)" --tool claude --structured-view
@@ -45,6 +49,11 @@ HQ 세션에 첫 지시:
 > 오케스트레이터 모드. ~/.claude/skills/aoe-orchestrator/SKILL.md 읽고, 함대 순찰 한 바퀴 돌고 보고해.
 
 이 단계의 가치: 워커 상태 파악이 "내가 8개 창을 돌며 읽기"에서 "HQ에게 순찰 시키기"로 바뀝니다.
+
+> **경계 (헷갈림 방지)**: `~/.claude/skills/...`는 instruction/reference라 업데이트 때 갈아끼워도 되고,
+> `~/.agent-of-empires/orchestrator/`는 mutable state(상태·이벤트·큐·`local-profile.md`)라 보존합니다.
+> 상태 정본은 orchestrator 쪽입니다. `local-profile.md`에 자기 환경의 모델·세션 ID·권한·경로를 채워 두면,
+> SKILL.md는 일반 규칙으로 유지됩니다.
 
 ## 3단계 — 이벤트 감시기 + 헬스체크 (15분)
 
