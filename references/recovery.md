@@ -1,6 +1,6 @@
 # Recovery
 
-워커·오케스트레이터·데몬이 꼬였을 때 복구 절차. (구체 라벨·경로는 운영자 `local-profile.md` 참조; 예시 틀은 `templates/local-profile.example.md`.)
+워커·오케스트레이터·데몬이 꼬였을 때 복구 절차. (구체 라벨·경로는 운영자 `local-profile.md` 참조; 예시 틀은 repo의 `templates/local-profile.example.md`.)
 
 ## 워커 wedge → restart
 

@@ -6,7 +6,7 @@
 
 ## 1. 권한 티어
 
-- 워커 git commit/push: 운영자 정책에 따름(`local-profile.md` 참조; 예시 틀은 `templates/local-profile.example.md`).
+- 워커 git commit/push: 운영자 정책에 따름(`local-profile.md` 참조; 예시 틀은 repo의 `templates/local-profile.example.md`).
   위임됐더라도 **위험 영역은 항상 운영자 승인**:
   프로덕션 배포를 트리거하는 push, force-push, 브랜치 정책 변경, 공개 repo 신규 공개,
   스키마·인증·결제·공개 API·의존성·배포 설정·프로덕션 데이터, 외부·최종 사용자 노출.
