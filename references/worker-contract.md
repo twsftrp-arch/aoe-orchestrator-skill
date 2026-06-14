@@ -6,7 +6,7 @@
 
 ## 1. 권한 티어
 
-- 워커 git commit/push: 운영자 정책에 따름(`templates/local-profile.example.md` 참조).
+- 워커 git commit/push: 운영자 정책에 따름(`local-profile.md` 참조; 예시 틀은 `templates/local-profile.example.md`).
   위임됐더라도 **위험 영역은 항상 운영자 승인**:
   프로덕션 배포를 트리거하는 push, force-push, 브랜치 정책 변경, 공개 repo 신규 공개,
   스키마·인증·결제·공개 API·의존성·배포 설정·프로덕션 데이터, 외부·최종 사용자 노출.
@@ -30,8 +30,9 @@ STATUS: working | blocked | done — <현재 작업 한 줄>
 - `blocked` — 운영자 결정·외부 작업·승인 대기. 무엇을 기다리는지 한 줄로.
 - `done` — 슬라이스 완료. 산출물 경로·검증 증거를 함께.
 
-오케스트레이터가 history에서 읽는 **blocked/done 표식**: 질문형("~할까요?"), 번호 선택지,
-`STATUS: blocked`, "승인 대기", "완료".
+오케스트레이터가 history에서 읽는 신호 — **authoritative**는 `STATUS: done` / `STATUS: blocked`.
+자연어("~할까요?", 번호 선택지, "승인 대기", "완료")는 **약한 신호**라 history tail로 확인 후 분류한다
+(일반 문장에도 섞여 false positive 가능).
 
 ## 4. done 보고에 포함할 것
 

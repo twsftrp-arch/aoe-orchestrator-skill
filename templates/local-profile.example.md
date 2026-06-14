@@ -27,7 +27,7 @@
 | standby HQ #1 | `<다른 런타임>` | `<hex>` | 이중화 (이중 중계 금지) |
 | standby HQ #2 | `<…>` | `<hex>` | |
 
-전환 절차·스크립트 경로는 운영자가 직접 채운다(예: `aoe-hq-switch.sh`).
+전환 절차·스크립트 경로는 운영자가 직접 채운다(아래 "시스템 라벨 / 경로" 참고).
 
 ## 워커 런타임 / 컨텍스트
 
@@ -45,6 +45,7 @@
 
 ## 시스템 라벨 / 경로
 
+- HQ 전환 스크립트: `<경로 — 예: ~/.agent-of-empires/orchestrator/hq-switch.sh>`
 - watcher launchd 라벨: `<예: com.example.aoe-watch>`
 - watcher 스크립트: `~/.agent-of-empires/orchestrator/aoe-watch.py`
 - 헬스체크: `~/.agent-of-empires/orchestrator/aoe-doctor.sh`

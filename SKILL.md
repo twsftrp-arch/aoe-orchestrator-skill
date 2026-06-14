@@ -8,13 +8,13 @@ description: aoe(agent-of-empires) 멀티 세션 오케스트레이션. 오너(O
 steipete의 maintainer-orchestrator 패턴을 오너(Owner)의 aoe 환경에 이식·진화시킨 운용 규칙.
 이 세션은 **오케스트레이터**다. 직접 구현 작업을 하지 않는다. 인수인계 상태는 `ORCHESTRATOR-STATE.md`가 정본 — mutable state라 skill 폴더가 아니라 `~/.agent-of-empires/orchestrator/`에 둔다.
 
-> 세부 참조: 워커 계약 `references/worker-contract.md` · 임무 템플릿 `references/assignment-template.md` · 복구 `references/recovery.md` · 환경별 로컬 값(모델·세션 ID·권한·경로) `templates/local-profile.example.md`.
+> 세부 참조: 워커 계약 `references/worker-contract.md` · 임무 템플릿 `references/assignment-template.md` · 복구 `references/recovery.md` · 환경별 로컬 값(모델·세션 ID·권한·경로)은 `~/.agent-of-empires/orchestrator/local-profile.md`(설치 시 `templates/local-profile.example.md`를 복사해 채운다).
 
 ## 함대 구성
 
-- **HQ 세트 상시** (전환식 아님): 역할로 구성한다 — 장맥락 HQ(대형 컨텍스트 모델, 1M급 분석 담당) 1개, 정비공 HQ(인프라·설정 담당) 1개, standby HQ 1~N개(다른 런타임으로 이중화). 구체 모델·세션 배정은 `templates/local-profile.example.md`에 둔다. 활성 오케스트레이터는 항상 1개만이며 현재 활성 정본은 `ORCHESTRATOR-STATE.md`와 `report-queue.md`. 이중 중계 금지.
-- **HQ 전환 핸드오프**: HQ 내부 대화 맥락은 다른 HQ로 자동 승계되지 않는다. 전환 시 떠나는 HQ는 워커 중계·순찰을 즉시 멈추되, 자기 대화창/작업 중에만 있고 정본 파일에 없는 최근 산출물·결정·사용자 피드백·임시파일 경로를 `ORCHESTRATOR-STATE.md`에 `HQ 전환 핸드오프 (<old> → <new>)`로 3-8줄 남긴 뒤 `STATUS: done — standby`로 끝낸다. 이미 STATE/큐/프로젝트 파일에 있으면 중복 기록하지 않는다. 새 활성 HQ는 첫 순찰 때 이 핸드오프 항목을 확인하고 누락 리스크를 보고한다. 정본 실행 경로는 `~/.agent-of-empires/orchestrator/aoe-hq-switch.sh`.
-- **워커는 structured(ACP)** 세션으로 운용한다. 런타임·모델·권한은 각 런타임의 글로벌 config로 통일하고, 구체 값은 `templates/local-profile.example.md`에 둔다.
+- **HQ 세트 상시** (전환식 아님): 역할로 구성한다 — 장맥락 HQ(대형 컨텍스트 모델, 1M급 분석 담당) 1개, 정비공 HQ(인프라·설정 담당) 1개, standby HQ 1~N개(다른 런타임으로 이중화). 구체 모델·세션 배정은 `local-profile.md`에 둔다. 활성 오케스트레이터는 항상 1개만이며 현재 활성 정본은 `ORCHESTRATOR-STATE.md`와 `report-queue.md`. 이중 중계 금지.
+- **HQ 전환 핸드오프**: HQ 내부 대화 맥락은 다른 HQ로 자동 승계되지 않는다. 전환 시 떠나는 HQ는 워커 중계·순찰을 즉시 멈추되, 자기 대화창/작업 중에만 있고 정본 파일에 없는 최근 산출물·결정·사용자 피드백·임시파일 경로를 `ORCHESTRATOR-STATE.md`에 `HQ 전환 핸드오프 (<old> → <new>)`로 3-8줄 남긴 뒤 `STATUS: done — standby`로 끝낸다. 이미 STATE/큐/프로젝트 파일에 있으면 중복 기록하지 않는다. 새 활성 HQ는 첫 순찰 때 이 핸드오프 항목을 확인하고 누락 리스크를 보고한다. 전환은 운영자 로컬 전환 스크립트로 실행한다(경로는 `local-profile.md`).
+- **워커는 structured(ACP)** 세션으로 운용한다. 런타임·모델·권한은 각 런타임의 글로벌 config로 통일하고, 구체 값은 `local-profile.md`에 둔다.
 - 일부 구독·플랜은 워커의 실효 컨텍스트에 상한이 있다(서버 강제 등). 그 상한을 넘는 1M급 맥락 작업은 장맥락 HQ가 직접 처리한다.
 
 ## 워커 운용 (ACP 명령 기반)
@@ -34,7 +34,7 @@ steipete의 maintainer-orchestrator 패턴을 오너(Owner)의 aoe 환경에 이
 - **탐지층**: launchd `com.example.aoe-watch` → `~/.agent-of-empires/orchestrator/aoe-watch.py`. acp_events.db를 20초 폴링: `Stopped/prompt_complete`→TURN_DONE, 기타 Stopped→STOPPED_<사유>, SessionError→ERROR, UserPromptSent 후 20분(반복)→LONG_RUN. `(HQ)` 타이틀 제외. `orchestrator/events.log`에 영속 기록 — 세션 교대·재부팅 생존.
 - **알림층(활성 오케스트레이터)**: ⚠️ structured(ACP) 화신에서 **Monitor 도구 금지** (adapter prompt_complete를 막아 worker orphan-재시작; adapter에 --disallowedTools 패치됨, npm 재설치 시 덮임 주의). 대신 ① 매 턴 시작 시 `tail events.log` ② 순찰 cron — **워커에 진행 중 작업이 1개 이상일 때만 등록** (활성 시 10분 간격 3,13,…,53분; 한가하면 13,43분) (전원 게이트 유휴면 이벤트 발원지가 오너(Owner)뿐이라 빈 순찰; 워커에 임무를 주입하는 시점에 켜고, 전원 유휴 복귀 시 끔) ③ 필요 시 foreground until-루프. cron은 in-memory라 컴팩트·세션 교대에서 보장 안 됨 — 재무장 시 CronList로 확인.
 - **보고 큐(영속)**: `~/.agent-of-empires/orchestrator/report-queue.md`.
-- **검증된 사실**: silent_orphan_grace_secs 등 [acp] 설정은 **데몬 기동 시에만 로드** — config 수정 후 `aoe serve --stop` → 풀 플래그 신규 기동 필요 (`--restart`는 데몬을 안 갈아끼움, 2026-06-12 실측; 기동 명령은 serve-watchdog.sh 참조). ACP 워커는 serve 재시작에서 생존·재접속. 단 턴 진행 중이면 그 턴만 orphan 위험 → **데몬 재시작은 함대 유휴 때만**. 워커 슬롯 한도 = config.toml `[acp] max_concurrent_workers`(현재 32; 함대 확장 시 같이 증설).
+- **검증된 사실**: silent_orphan_grace_secs 등 [acp] 설정은 **데몬 기동 시에만 로드** — config 수정 후 `aoe serve --stop` → 풀 플래그 신규 기동 필요 (`--restart`는 데몬을 안 갈아끼움, 2026-06-12 실측; 기동 명령은 운영자 로컬 기동 스크립트 참조). ACP 워커는 serve 재시작에서 생존·재접속. 단 턴 진행 중이면 그 턴만 orphan 위험 → **데몬 재시작은 함대 유휴 때만**. 워커 슬롯 한도 = aoe `config.toml` `[acp] max_concurrent_workers`(값은 local-profile; 함대 확장 시 같이 증설).
 
 ## 이상 감지 프로토콜
 
@@ -45,7 +45,7 @@ steipete의 maintainer-orchestrator 패턴을 오너(Owner)의 aoe 환경에 이
 
 ## 루프 사이클 (매 순찰)
 
-1. **먼저 읽는다** — events.log 신규분 + `aoe acp ps` + 큐 파일을 읽기 전에는 판단·메시지 생성 금지.
+1. **먼저 읽는다** — events.log 신규분 + `aoe acp ps` + `ORCHESTRATOR-STATE.md` + `report-queue.md`를 읽기 전에는 판단·메시지 생성 금지. 임무 배정·권한 판단 전에는 `local-profile.md`도 확인한다.
 2. **분류** — working / blocked / done / idle / 불명.
 3. **선별 개입** — working이고 일관된 진행이면 침묵. 개입 조건: 블로커 보고·조율 요청 / 작업 완료·소진 / 반복 실패+구체 교정안 / 미승인 변경·파괴적 행동·보안 위험·오너(Owner) 지시 충돌 / 범위 대이탈.
 4. **유휴 처리 (게이트 문서화 규칙)** — 유휴 워커는 *게이트 사유*(오너(Owner) 손작업 대기·홀드·종결 등)가 STATE/큐에 문서화돼 있어야 한다. 사유가 문서화된 유휴는 정상 — 건드리지 않는다. **사유 없는 유휴만** 다음 자율 아이템 할당 → 없으면 decision-ready 준비 → 그것도 없으면 정리 제안. (steipete의 Idle Closeout 약화판: 그는 OSS라 유휴=낭비지만 우리는 게이트 대기가 정상 상태.)
@@ -77,7 +77,7 @@ steipete의 maintainer-orchestrator 패턴을 오너(Owner)의 aoe 환경에 이
 - **컨텍스트 70% 초과 시**: 함대가 한가한 시점에 오너(Owner)께 선제적으로 `/compact`를 제안한다 (1M 도달 시 임의 시점 강제 컴팩트보다 의도적 압축이 낫다). 컴팩트 전 SKILL/STATE/큐/메모리 최신화 확인. cron·launchd는 컴팩트에서 생존한다(세션 교대에서만 죽음).
 - **대형 compact는 aoe UI 밖에서**: 컨텍스트 70~80% 이상인 장맥락 HQ의 `/compact`를 aoe structured view 안에서 돌리면 silent-orphan watchdog(`grace_secs=120`)가 120초 무진행 시 session/cancel을 쏴 abort시킨다. **해당 CLI로 세션을 직접 resume해 compact → `aoe acp restart <ID>`로 재접속** 순서로 우회한다(상세는 `references/recovery.md`).
 - 교대(이사·인수) 절차는 `ORCHESTRATOR-STATE.md` "즉시 재무장" 절 참조. 점검 일괄 실행: `~/.agent-of-empires/orchestrator/aoe-doctor.sh` (교대 직후·이상 의심 시 첫 명령).
-- 시스템(데몬·어댑터·설정) 변경은 **한 채널만** — 5.5나 데스크톱 앱이 같은 부위를 만지는 중이면 대기.
+- 시스템(데몬·어댑터·설정) 변경은 **한 채널만** — 다른 HQ나 데스크톱 도구가 같은 부위를 만지는 중이면 대기.
 
 ## 부록: tmux 레거시 노하우 (워커를 다시 tmux로 굴릴 때만)
 
